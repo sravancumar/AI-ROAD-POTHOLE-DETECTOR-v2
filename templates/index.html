@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="loader" class="loading-overlay">
+        <div class="bumpy-car">🚗</div>
+        <h2 style="font-family:'Fredoka One'; color:var(--blue);">Scanning Roads...</h2>
+    </div>
+
+    <div class="app-shell">
+        <div class="header"><h1>AIR Pothole Detector</h1></div>
+        <div class="card">
+            <video id="camera" autoplay playsinline style="width:100%; border-radius:20px; background:#000;"></video>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+                <button class="btn btn-outline" onclick="toggleCamera()">🔌 On/Off</button>
+                <button class="btn btn-outline" onclick="switchCam()">🔄 Switch</button>
+                <button class="btn btn-blue" onclick="capImg()">📸 Capture</button>
+                <button id="recB" class="btn btn-blue" onclick="startR()">🎥 Record</button>
+            </div>
+            <button id="subB" class="btn btn-blue" style="display:none; background:var(--dark-blue);" onclick="process()">🚀 Detect (<span id="qCount">0</span>)</button>
+        </div>
+        <div class="card">
+            <input type="file" id="fIn" multiple accept="image/*,video/*" class="btn btn-outline" style="padding:10px;">
+            <button class="btn btn-blue" onclick="uploadFiles()">📤 Submit Files</button>
+            <button class="btn btn-outline" onclick="window.location.href='/history'">📜 History</button>
+        </div>
+    </div>
+<script>
+let stream, queue = [], mode = "environment";
+async function toggleCamera() {
+    if(stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    else { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }); document.getElementById("camera").srcObject = stream; }
+}
+function switchCam() { mode = mode === "user" ? "environment" : "user"; if(stream) toggleCamera().then(toggleCamera); }
+function capImg() {
+    const v = document.getElementById("camera");
+    const c = document.createElement("canvas");
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext("2d").drawImage(v, 0, 0);
+    c.toBlob(b => { 
+        queue.push(new File([b], `c_${Date.now()}.jpg`)); 
+        document.getElementById("qCount").innerText = queue.length;
+        document.getElementById("subB").style.display = "flex";
+    }, 'image/jpeg');
+}
+function uploadFiles() {
+    for(let f of document.getElementById('fIn').files) queue.push(f);
+    process();
+}
+function process() {
+    document.getElementById('loader').style.display = 'flex';
+    const fd = new FormData();
+    queue.forEach(f => fd.append('images', f));
+    navigator.geolocation.getCurrentPosition(p => {
+        fd.append('lat', p.coords.latitude); fd.append('lon', p.coords.longitude);
+        fetch('/detect_multiple', { method: 'POST', body: fd }).then(r => r.text()).then(h => { document.open(); document.write(h); document.close(); });
+    });
+}
+toggleCamera();
+</script>
+</body>
+</html>

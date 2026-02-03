@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app-shell">
+    <div class="header"><button onclick="window.history.back()" class="back-arrow">←</button><h1>Official Report</h1></div>
+    <div class="card">
+        <div id="report-box"></div>
+        <button class="btn btn-blue" style="background:#0ea5e9; margin-top:20px;" onclick="mail()">📧 Email Report</button>
+        <button class="btn btn-blue" style="background:#25D366; color:white;" onclick="wa()">📱 WhatsApp</button>
+        <button class="btn btn-outline" onclick="window.location.href='/'">🏠 Go Home</button>
+    </div>
+</div>
+<script>
+const d = JSON.parse(sessionStorage.getItem('current_complaint'));
+const photoLinks = d.all_images.map(img => `${window.location.origin}/static/results/${img}`).join('\n');
+const msg = `*AIR POTHOLE REPORT*\n------------------\n📅 Date: ${d.date}\n⚠️ Count: ${d.potholes}\n📍 Location: ${d.address}\n🗺️ Map: https://maps.google.com/maps?q=${d.lat},${d.lon}\n🖼️ Evidence:\n${photoLinks}`;
+document.getElementById('report-box').innerText = msg;
+function wa() { window.open("https://wa.me/?text=" + encodeURIComponent(msg)); }
+function mail() { window.location.href = `mailto:ghmc@hyderabad.gov.in?subject=Pothole Repair&body=${encodeURIComponent(msg)}`; }
+</script>
+</body>
+</html>
